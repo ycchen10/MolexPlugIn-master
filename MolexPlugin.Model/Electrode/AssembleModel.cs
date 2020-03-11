@@ -19,7 +19,7 @@ namespace MolexPlugin.Model.Electrode
             ASMModel aSM = new ASMModel();
             aSM.GetModelForPart(part);
             this.ASM = aSM;
-           
+
         }
         public void Clear()
         {
@@ -33,15 +33,21 @@ namespace MolexPlugin.Model.Electrode
         /// <returns></returns>
         public bool AddWork(Part part)
         {
-            string name = this.ASM.MoldInfo.MoldNumber + "-" + this.ASM.MoldInfo.WorkpieceNumber;
-            if (part.Name.Substring(0, name.Length).Equals(name))
+            NXOpen.Assemblies.Component comp = part.OwningComponent;
+            Part parent = comp.Parent.Prototype as Part;
+            if (parent.Tag == this.ASM.PartTag.Tag)
             {
-                string type = AttributeUtils.GetAttrForString(part, "PartType");
-                if (!this.WorkAssembles.Exists(x => x.Work.AssembleName == part.Name) && type == "Work")
+
+                string name = this.ASM.MoldInfo.MoldNumber + "-" + this.ASM.MoldInfo.WorkpieceNumber;
+                if (part.Name.Substring(0, name.Length).Equals(name))
                 {
-                    WorkAssembleModel model = new WorkAssembleModel(part);
-                    this.WorkAssembles.Add(model);
-                    return true;
+                    string type = AttributeUtils.GetAttrForString(part, "PartType");
+                    if (!this.WorkAssembles.Exists(x => x.Work.AssembleName == part.Name) && type == "Work")
+                    {
+                        WorkAssembleModel model = new WorkAssembleModel(part);
+                        this.WorkAssembles.Add(model);
+                        return true;
+                    }
                 }
             }
             return false;
@@ -49,7 +55,7 @@ namespace MolexPlugin.Model.Electrode
         public void Initialization(Part part)
         {
             NXOpen.Assemblies.Component[] comp = part.ComponentAssembly.RootComponent.GetChildren();
-            foreach(NXOpen.Assemblies.Component ct in comp)
+            foreach (NXOpen.Assemblies.Component ct in comp)
             {
 
             }

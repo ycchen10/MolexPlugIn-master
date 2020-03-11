@@ -36,13 +36,18 @@ namespace MolexPlugin.Model.Electrode
         /// <returns></returns>
         public bool AddElectrode(Part part)
         {
-            string type = AttributeUtils.GetAttrForString(part, "PartType");
-            if (!this.Electrodes.Exists(x => x.AssembleName == part.Name) && type == "Electrode")
+            NXOpen.Assemblies.Component comp = part.OwningComponent;
+            Part parent = comp.Parent.Prototype as Part;
+            if (parent.Tag == this.Work.PartTag.Tag)
             {
-                ElectrodeModel ele = new ElectrodeModel();
-                ele.GetModelForPart(part);
-                this.Electrodes.Add(ele);
-                return true;
+                string type = AttributeUtils.GetAttrForString(part, "PartType");
+                if (!this.Electrodes.Exists(x => x.AssembleName == part.Name) && type == "Electrode")
+                {
+                    ElectrodeModel ele = new ElectrodeModel();
+                    ele.GetModelForPart(part);
+                    this.Electrodes.Add(ele);
+                    return true;
+                }
             }
             return false;
         }

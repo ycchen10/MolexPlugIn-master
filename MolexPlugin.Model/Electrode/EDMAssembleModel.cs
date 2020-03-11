@@ -27,10 +27,15 @@ namespace MolexPlugin.Model.Electrode
         /// <returns></returns>
         public bool AddWorkpiece(Part part)
         {
-            if (!this.Workpieces.Exists(x => x.Name == part.Name))
+            NXOpen.Assemblies.Component comp = part.OwningComponent;
+            Part parent = comp.Parent.Prototype as Part;
+            if (parent.Tag == this.EDM.PartTag.Tag)
             {
-                this.Workpieces.Add(part);
-                return true;
+                if (!this.Workpieces.Exists(x => x.Name == part.Name))
+                {
+                    this.Workpieces.Add(part);
+                    return true;
+                }
             }
             return false;
         }
