@@ -1,0 +1,170 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.IO;
+using NXOpen;
+using Basic;
+using NXOpen.Assemblies;
+
+namespace MolexPlugin.Model.Electrode
+{
+    /// <summary>
+    /// 电极
+    /// </summary>
+    public class ElectrodeModel : AbstractModel
+    {
+        /// <summary>
+        /// 电极信息
+        /// </summary>
+        public ElectrodeInfo EleInfo { get; set; } = new ElectrodeInfo();
+        /// <summary>
+        /// 电极矩阵
+        /// </summary>
+        public Matrix4 EleMatr { get; set; }
+        /// <summary>
+        /// 电极中心点在work位置点
+        /// </summary>
+        public Point3d CenterPt { get; set; }
+
+        public ElectrodeModel()
+        {
+
+        }
+        public ElectrodeModel(ElectrodeInfo info, MoldInfoModel mold, Matrix4 mat, Point3d center)
+        {
+            this.PartType = "Electrode";
+            this.EleInfo = info;
+            this.MoldInfo = mold;
+            this.EleMatr = mat;
+            this.CenterPt = center;
+
+        }
+        public override bool CreatePart(string filePath)
+        {
+            GetAssembleName();
+            this.WorkpieceDirectoryPath = filePath;
+            this.WorkpiecePath = filePath + this.AssembleName + ".prt";
+            if (File.Exists(this.WorkpiecePath))
+            {
+                ClassItem.MessageBox("电极重名", NXMessageBox.DialogType.Error);
+                return false;
+            }
+            Part part = PartUtils.NewFile(this.WorkpiecePath) as Part;
+            this.PartTag = part;
+            SetAttribute();
+            return true;
+        }
+
+        public override void GetAssembleName()
+        {
+            this.AssembleName = EleInfo.EleName;
+        }
+
+        public override void GetModelForPart(Part part)
+        {
+            this.GetAttribute(part);
+            this.AssembleName = part.Name;
+            this.WorkpiecePath = part.FullPath;
+            this.WorkpieceDirectoryPath = Path.GetDirectoryName(WorkpiecePath) + "\\";
+            this.AssembleName = Path.GetFileNameWithoutExtension(this.WorkpiecePath);
+        }
+
+        public override Component Load(Part parentPart)
+        {
+            Point3d temp = new Point3d(this.CenterPt.X, this.CenterPt.Y, this.CenterPt.Z);
+            Matrix4 invers = this.EleMatr.GetInversMatrix();
+            invers.ApplyPos(ref temp);  //转成绝对坐标
+            return Basic.AssmbliesUtils.PartLoad(parentPart, this.WorkpiecePath, this.AssembleName, this.EleMatr, temp);
+        }
+        protected override void GetAttribute(Part part)
+        {
+            base.GetAttribute(part);
+            EleInfo.GetAttribute(part);
+
+        }
+
+        protected override void SetAttribute()
+        {
+            base.SetAttribute();
+            EleInfo.SetAttribute(this.PartTag);
+            AttributeUtils.AttributeOperation("Matrx4", Matrx4ToString(this.EleMatr), this.PartTag);
+        }
+        /// <summary>
+        /// 创建装配
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        public NXOpen.Assemblies.Component CreateCompPart(string filePath)
+        {
+
+            GetAssembleName();
+            this.WorkpieceDirectoryPath = filePath;
+            this.WorkpiecePath = filePath + this.AssembleName + ".prt";
+            if (File.Exists(this.WorkpiecePath))
+            {
+                ClassItem.MessageBox("电极重名", NXMessageBox.DialogType.Error);
+                return null;
+            }
+            CsysUtils.SetWcsOfCenteAndMatr(this.CenterPt, this.EleMatr.GetMatrix3());
+            NXObject obj = AssmbliesUtils.CreateNew(this.AssembleName, WorkpiecePath);
+            NXOpen.Assemblies.Component comp = obj as NXOpen.Assemblies.Component;
+            this.PartTag = obj.Prototype as Part;
+            SetAttribute();
+             CsysUtils.SetWcsToAbs();
+            return comp;
+        }
+        /// <summary>
+        /// 获取电极矩阵
+        /// </summary>
+        /// <param name="part"></param>
+        /// <returns></returns>
+        public Matrix4 GetEleMatrix4(Part part)
+        {
+            string[] temp = new string[4];
+            for (int i = 0; i < 4; i++)
+            {
+                temp[i] = AttributeUtils.GetAttrForString(part, "Matrx4", i);
+            }
+             
+            return StringToMatrx4(temp);
+        }
+
+        /// <summary>
+        /// 矩阵转字符
+        /// </summary>
+        /// <param name="matr"></param>
+        /// <returns></returns>
+        private string[] Matrx4ToString(Matrix4 matr)
+        {
+            string[] temp = new string[4];
+
+            for (int i = 0; i < 4; i++)
+            {
+                temp[i] = Math.Round(matr.matrix[i, 0], 4).ToString() + "," + Math.Round(matr.matrix[i, 1], 4).ToString() + "," +
+                   Math.Round(matr.matrix[i, 2], 4).ToString() + "," + Math.Round(matr.matrix[i, 3], 4).ToString();
+            }
+            return temp;
+        }
+        /// <summary>
+        /// 字符转矩阵
+        /// </summary>
+        /// <param name="matrString"></param>
+        /// <returns></returns>
+        private Matrix4 StringToMatrx4(string[] matrString)
+        {
+            double[,] temp = new double[4, 4];
+            for (int i = 0; i < 4; i++)
+            {
+                string[] ch = { "," };
+                string[] str = matrString[i].Split(ch, StringSplitOptions.RemoveEmptyEntries);
+                for (int j = 0; j < 4; j++)
+                {
+                    temp[i, j] = Convert.ToDouble(str[j]);
+                }
+            }
+            return new Matrix4(temp);
+        }
+    }
+}
