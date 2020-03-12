@@ -10,48 +10,54 @@ using MolexPlugin.Model;
 
 namespace MolexPlugin.DAL
 {
-    /// <summary>
-    /// 创建组立档
-    /// </summary>
     public class AddEdmAsmBuilder
     {
-
         public static void CreateBuilder(MoldInfoModel moldInfo)
         {
-            Matrix4 matr = new Matrix4();
-            matr.Identity();
             Part workPart = Session.GetSession().Parts.Work;
-
-
-            AbstractAssembleModel workPiece = new WorkPieceAssembleModel(workPart, moldInfo);
-            AbstractAssembleModel asm = new AsmAssembleModel(moldInfo);
-            AbstractAssembleModel work = new WorkAssembleModel(moldInfo, 1, matr);
-            AbstractAssembleModel edm = new EDMAssembleModel(moldInfo);
-            string path;
-            if (workPart.Name.Equals(workPiece.AssembleName))
+            NXOpen.Assemblies.Component[] ct = workPart.ComponentAssembly.RootComponent.GetChildren();
+            if (ct.Length == 0 || ct == null)
             {
-                path = workPiece.WorkpieceDirectoryPath;
+                UI.GetUI().NXMessageBox.Show("错误！", NXMessageBox.DialogType.Error, "工件是装配关系");
+                return;
+            }
+            CsysUtils.SetWcsToAbs();
+            Matrix4 mat = new Matrix4();
+            mat.Identity();
+            string name = moldInfo.MoldNumber + "-" + moldInfo.WorkpieceNumber + moldInfo.EditionNumber;
+            string partfull = workPart.FullPath;
+            string path;
+            if (workPart.Name.Equals(name))
+            {
+                path = Path.GetDirectoryName(partfull) + "\\";
             }
             else
-                path = workPiece.WorkpieceDirectoryPath + moldInfo.WorkpieceNumber + "-" + moldInfo.EditionNumber + "\\";
+            {
+                path = Path.GetDirectoryName(partfull) + "\\" + moldInfo.WorkpieceNumber + "-" + moldInfo.EditionNumber + "\\";
+            }
 
-            workPiece.CreatePart(path);
+            CreateAsmPart asm = new CreateAsmPart(path, moldInfo);
+            CreateEdmPart edm = new CreateEdmPart(path, moldInfo);
+            CreateWorkPart work = new CreateWorkPart(path, moldInfo, 1, mat);
+            CreateWorkpiecePart workpiece = new CreateWorkpiecePart(path, workPart, moldInfo);
 
-            asm.CreatePart(path);
-            bool ok = work.CreatePart(path);
-            edm.CreatePart(path);
-            if (!ok)
-                return;
-            work.Load(asm.PartTag);
-            edm.Load(work.PartTag);
-            workPiece.Load(edm.PartTag);
-            PartUtils.SetPartDisplay(asm.PartTag);
+
+            workpiece.CreatePart();
+            asm.CreatePart();
+            edm.CreatePart();
+            work.CreatePart();
+
+            workpiece.Load(edm.Model.PartTag);
+            edm.Load(work.Model.PartTag);
+            work.Load(asm.Model.PartTag);
+
+            PartUtils.SetPartDisplay(asm.Model.PartTag);
             bool anyPartsModified1;
             NXOpen.PartSaveStatus partSaveStatus1;
             Session.GetSession().Parts.SaveAll(out anyPartsModified1, out partSaveStatus1);
 
-
         }
+
 
     }
 }

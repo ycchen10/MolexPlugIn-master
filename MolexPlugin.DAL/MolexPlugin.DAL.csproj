@@ -56,19 +56,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analyze\AnalyzeBuilder.cs" />
-    <Compile Include="AssembleCollection.cs" />
-    <Compile Include="ElectrodeFactory.cs" />
-    <Compile Include="AssembleInstance.cs" />
-    <Compile Include="ELectrodeName.cs" />
-    <Compile Include="ElectrodePart.cs" />
-    <Compile Include="ElectrodePreviewBuilder.cs" />
-    <Compile Include="ElectrodeSketchBuilder.cs" />
-    <Compile Include="Electrode\AddWorkBuilder.cs" />
-    <Compile Include="Electrode\ElectrodeAssembleCollection.cs" />
-    <Compile Include="Electrode\AddEdmAsmBuilder.cs" />
     <Compile Include="Analyze\AnalyzeFaceSlopeAndRadius.cs" />
     <Compile Include="BOX\SuperBoxCylinder.cs" />
     <Compile Include="Data\ControlValue.cs" />
+    <Compile Include="ElectrodeExp.cs" />
+    <Compile Include="ElectrodeHeadInfo.cs" />
+    <Compile Include="Electrode\AddEdmAsmBuilder.cs" />
+    <Compile Include="Electrode\AddWorkBuilder.cs" />
+    <Compile Include="Electrode\AssembleSingleton.cs" />
+    <Compile Include="Electrode\CreateAsmPart.cs" />
+    <Compile Include="Electrode\CreateEdmPart.cs" />
+    <Compile Include="Electrode\CreateElectrodePart .cs" />
+    <Compile Include="Electrode\CreateWorkPart.cs" />
+    <Compile Include="Electrode\CreateWorkpiecePart.cs" />
+    <Compile Include="Electrode\FindElectrodeAndWork.cs" />
+    <Compile Include="Electrode\ICreateAssmblePart.cs" />
     <Compile Include="EletrodePreparation.cs" />
     <Compile Include="Move\MoveObjectFactory.cs" />
     <Compile Include="Move\MoveObjectBasic.cs" />

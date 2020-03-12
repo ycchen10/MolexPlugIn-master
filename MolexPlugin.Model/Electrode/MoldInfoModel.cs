@@ -7,7 +7,7 @@ using NXOpen;
 using Basic;
 
 
-namespace MolexPlugin.Model.Electrode
+namespace MolexPlugin.Model
 {
     /// <summary>
     /// 摸具信息

@@ -6,62 +6,116 @@ using System.Threading.Tasks;
 using NXOpen;
 using Basic;
 
-namespace MolexPlugin.Model.Electrode
+namespace MolexPlugin.Model
 {
+    /// <summary>
+    /// 装配实体
+    /// </summary>
     public class AssembleModel
     {
-        public ASMModel ASM { get; private set; }
+        private Part part;
+        private string moldAndWorkpieceNum;
+        public ASMModel Asm { get; private set; }
 
-        public List<WorkAssembleModel> WorkAssembles { get; private set; }
+        public List<WorkModel> Works { get; private set; }
+
+        public EDMModel Edm { get; private set; }
+
+        public List<ElectrodeModel> Electrodes { get; private set; }
+
 
         public AssembleModel(Part part)
         {
-            ASMModel aSM = new ASMModel();
-            aSM.GetModelForPart(part);
-            this.ASM = aSM;
-
+            this.part = part;
+            MoldInfoModel info = new MoldInfoModel(part);
+            this.moldAndWorkpieceNum = info.MoldNumber + "-" + info.WorkpieceNumber;
+            GetAssembleInfo();
         }
-        public void Clear()
-        {
-            this.WorkAssembles.Clear();
-        }
-
         /// <summary>
-        /// 添加Work
+        /// 获取全部装配
         /// </summary>
-        /// <param name="part"></param>
-        /// <returns></returns>
-        public bool AddWork(Part part)
+        private void GetAssembleInfo()
         {
-            NXOpen.Assemblies.Component comp = part.OwningComponent;
-            Part parent = comp.Parent.Prototype as Part;
-            if (parent.Tag == this.ASM.PartTag.Tag)
+            foreach (Part pt in Session.GetSession().Parts)
             {
-
-                string name = this.ASM.MoldInfo.MoldNumber + "-" + this.ASM.MoldInfo.WorkpieceNumber;
-                if (part.Name.Substring(0, name.Length).Equals(name))
+                if (pt.Name.Length > moldAndWorkpieceNum.Length)
                 {
-                    string type = AttributeUtils.GetAttrForString(part, "PartType");
-                    if (!this.WorkAssembles.Exists(x => x.Work.AssembleName == part.Name) && type == "Work")
+                    if (moldAndWorkpieceNum.Equals(pt.Name.Substring(0, moldAndWorkpieceNum.Length))) //判断是否一个模号
                     {
-                        WorkAssembleModel model = new WorkAssembleModel(part);
-                        this.WorkAssembles.Add(model);
-                        return true;
+                        string partType = AttributeUtils.GetAttrForString(part, "PartType");
+
+                        switch (partType)
+                        {
+                            case "Asm":
+                                {
+                                    ASMModel asm = new ASMModel();
+                                    asm.GetModelForPart(pt);
+                                    this.Asm = asm;
+                                    break;
+                                }
+                            case "Edm":
+                                {
+                                    EDMModel edm = new EDMModel();
+                                    edm.GetModelForPart(pt);
+                                    this.Edm = edm;
+                                    break;
+                                }
+                            case "Work":
+                                {
+                                    WorkModel model = new WorkModel();
+                                    model.GetModelForPart(pt);
+                                    this.Works.Add(model);
+                                    break;
+                                }
+                            case "Electrode":
+                                {
+                                    ElectrodeModel model = new ElectrodeModel();
+                                    model.GetModelForPart(pt);
+                                    this.Electrodes.Add(model);
+                                    break;
+                                }
+                            default:
+                                break;
+
+                        }
                     }
                 }
             }
-            return false;
         }
-        public void Initialization(Part part)
+        /// <summary>
+        /// 添加Work
+        /// </summary>
+        /// <param name="work"></param>
+        public void AddWork(WorkModel work)
         {
-            NXOpen.Assemblies.Component[] comp = part.ComponentAssembly.RootComponent.GetChildren();
-            foreach (NXOpen.Assemblies.Component ct in comp)
+            if (!this.Works.Exists(x => x.AssembleName == work.AssembleName))
             {
-
+                this.Works.Add(work);
+            }
+            else
+            {
+                WorkModel temp = this.Works.Find(x => x.AssembleName == work.AssembleName);
+                this.Works.Remove(temp);
+                this.Works.Add(work);
             }
         }
 
-
-
+        /// <summary>
+        /// 添加电极
+        /// </summary>
+        /// <param name="ele"></param>
+        public void AddElectrode(ElectrodeModel ele)
+        {
+            if (!this.Electrodes.Exists(x => x.AssembleName == ele.AssembleName))
+            {
+                this.Electrodes.Add(ele);
+            }
+            else
+            {
+                ElectrodeModel temp = this.Electrodes.Find(x => x.AssembleName == ele.AssembleName);
+                this.Electrodes.Remove(temp);
+                this.Electrodes.Add(ele);
+            }
+        }
     }
 }

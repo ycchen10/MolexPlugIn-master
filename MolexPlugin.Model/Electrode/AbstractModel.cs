@@ -8,9 +8,9 @@ using NXOpen;
 using Basic;
 
 
-namespace MolexPlugin.Model.Electrode
+namespace MolexPlugin.Model
 {
-    public abstract  class AbstractModel:IEquatable<AbstractModel>
+    public abstract class AbstractModel : IEquatable<AbstractModel>
     {
         /// <summary>
         /// 模具信息
@@ -59,7 +59,7 @@ namespace MolexPlugin.Model.Electrode
             MoldInfo.GetAttribute(part);
             this.PartType = AttributeUtils.GetAttrForString(part, "PartType");
         }
-       
+
         /// <summary>
         /// 获取名字
         /// </summary>
@@ -68,7 +68,7 @@ namespace MolexPlugin.Model.Electrode
         /// 创建part档
         /// </summary>
         /// <returns></returns>
-        public abstract bool CreatePart(string filePath);
+        public abstract void CreatePart();
         /// <summary>
         /// 通过part获得Model
         /// </summary>

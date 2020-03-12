@@ -8,7 +8,7 @@ using NXOpen;
 using Basic;
 using NXOpen.Assemblies;
 
-namespace MolexPlugin.Model.Electrode
+namespace MolexPlugin.Model
 {
     /// <summary>
     /// work
@@ -27,27 +27,22 @@ namespace MolexPlugin.Model.Electrode
         {
 
         }
-        public WorkModel(MoldInfoModel moldInfo, int workNumber, Matrix4 matr)
+        public WorkModel(string filePath,MoldInfoModel moldInfo, int workNumber, Matrix4 matr)
         {
             this.MoldInfo = moldInfo;
             this.WorkNumber = workNumber;
             this.WorkMatr = matr;
             this.PartType = "Work";
-        }
-     
-        public override bool CreatePart(string filePath)
-        {
             GetAssembleName();
             this.WorkpieceDirectoryPath = filePath;
             this.WorkpiecePath = filePath + this.AssembleName + ".prt";
-            if (File.Exists(this.WorkpiecePath))
-            {
-                return false;
-            }
+        }
+     
+        public override void CreatePart()
+        {             
             Part part = PartUtils.NewFile(this.WorkpiecePath) as Part;
             this.PartTag = part;
             SetAttribute();
-            return true;
         }
 
         public override void GetAssembleName()

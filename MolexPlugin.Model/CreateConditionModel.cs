@@ -10,11 +10,10 @@ namespace MolexPlugin.Model
     /// <summary>
     /// 创建电极的条件
     /// </summary>
-    public class EleConditionModel
+    public class CreateConditionModel
     {
-        public WorkAssembleModel Work { get; set; }
+        public WorkModel Work { get; set; }
         public Vector3d Vec { get; set; }
         public List<Body> Bodys { get; set; }
-
     }
 }

@@ -8,13 +8,15 @@ using NXOpen;
 using Basic;
 using NXOpen.Assemblies;
 
-namespace MolexPlugin.Model.Electrode
+namespace MolexPlugin.Model
 {
     /// <summary>
     /// 电极
     /// </summary>
     public class ElectrodeModel : AbstractModel
     {
+
+        public int WorkNumber { get; set; }
         /// <summary>
         /// 电极信息
         /// </summary>
@@ -32,29 +34,23 @@ namespace MolexPlugin.Model.Electrode
         {
 
         }
-        public ElectrodeModel(ElectrodeInfo info, MoldInfoModel mold, Matrix4 mat, Point3d center)
+        public ElectrodeModel(string filePath, int workNum, ElectrodeInfo info, MoldInfoModel mold, Matrix4 mat, Point3d center)
         {
             this.PartType = "Electrode";
             this.EleInfo = info;
             this.MoldInfo = mold;
             this.EleMatr = mat;
             this.CenterPt = center;
-
-        }
-        public override bool CreatePart(string filePath)
-        {
             GetAssembleName();
             this.WorkpieceDirectoryPath = filePath;
             this.WorkpiecePath = filePath + this.AssembleName + ".prt";
-            if (File.Exists(this.WorkpiecePath))
-            {
-                ClassItem.MessageBox("电极重名", NXMessageBox.DialogType.Error);
-                return false;
-            }
+            this.WorkNumber = workNum;
+        }
+        public override void CreatePart()
+        {
             Part part = PartUtils.NewFile(this.WorkpiecePath) as Part;
             this.PartTag = part;
             SetAttribute();
-            return true;
         }
 
         public override void GetAssembleName()
@@ -69,6 +65,10 @@ namespace MolexPlugin.Model.Electrode
             this.WorkpiecePath = part.FullPath;
             this.WorkpieceDirectoryPath = Path.GetDirectoryName(WorkpiecePath) + "\\";
             this.AssembleName = Path.GetFileNameWithoutExtension(this.WorkpiecePath);
+            Matrix4 inver = this.EleMatr.GetInversMatrix();
+            Point3d ceneter = new Point3d(0, 0, 0);
+            inver.ApplyPos(ref ceneter);
+            this.CenterPt = ceneter;
         }
 
         public override Component Load(Part parentPart)
@@ -82,7 +82,13 @@ namespace MolexPlugin.Model.Electrode
         {
             base.GetAttribute(part);
             EleInfo.GetAttribute(part);
-
+            string[] temp = new string[4];
+            for (int i = 0; i < 4; i++)
+            {
+                temp[i] = AttributeUtils.GetAttrForString(part, "Matrx4", i);
+            }
+            this.EleMatr = StringToMatrx4(temp);
+            this.WorkNumber = AttributeUtils.GetAttrForInt(part, "WorkNumber");
         }
 
         protected override void SetAttribute()
@@ -90,29 +96,22 @@ namespace MolexPlugin.Model.Electrode
             base.SetAttribute();
             EleInfo.SetAttribute(this.PartTag);
             AttributeUtils.AttributeOperation("Matrx4", Matrx4ToString(this.EleMatr), this.PartTag);
+            AttributeUtils.AttributeOperation("WorkNumber", this.WorkNumber, this.PartTag);
         }
         /// <summary>
         /// 创建装配
         /// </summary>
         /// <param name="filePath"></param>
         /// <returns></returns>
-        public NXOpen.Assemblies.Component CreateCompPart(string filePath)
+        public NXOpen.Assemblies.Component CreateCompPart()
         {
 
-            GetAssembleName();
-            this.WorkpieceDirectoryPath = filePath;
-            this.WorkpiecePath = filePath + this.AssembleName + ".prt";
-            if (File.Exists(this.WorkpiecePath))
-            {
-                ClassItem.MessageBox("电极重名", NXMessageBox.DialogType.Error);
-                return null;
-            }
             CsysUtils.SetWcsOfCenteAndMatr(this.CenterPt, this.EleMatr.GetMatrix3());
             NXObject obj = AssmbliesUtils.CreateNew(this.AssembleName, WorkpiecePath);
             NXOpen.Assemblies.Component comp = obj as NXOpen.Assemblies.Component;
             this.PartTag = obj.Prototype as Part;
             SetAttribute();
-             CsysUtils.SetWcsToAbs();
+            CsysUtils.SetWcsToAbs();
             return comp;
         }
         /// <summary>
@@ -127,7 +126,7 @@ namespace MolexPlugin.Model.Electrode
             {
                 temp[i] = AttributeUtils.GetAttrForString(part, "Matrx4", i);
             }
-             
+
             return StringToMatrx4(temp);
         }
 

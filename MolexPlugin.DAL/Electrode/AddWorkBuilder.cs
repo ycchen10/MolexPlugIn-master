@@ -4,78 +4,68 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NXOpen;
-using NXOpen.UF;
 using Basic;
 using MolexPlugin.Model;
+
 
 namespace MolexPlugin.DAL
 {
     public class AddWorkBuilder
     {
-        /// <summary>
-        /// 获取Work号
-        /// </summary>
-        /// <param name="asmPart"></param>
-        /// <returns></returns>
-        public static List<int> GetWorkNumber(Part asmPart)
+        public AssembleModel Model { get; private set; }
+        private Part asmPart;
+        private AssembleSingleton singleton;
+        public AddWorkBuilder(Part asmPart)
         {
-            List<int> number = new List<int>();
+            this.asmPart = asmPart;
+            singleton = AssembleSingleton.Instance();
+            this.Model = singleton.GetAssemble(asmPart);
+        }
+        /// <summary>
+        /// 创建特征
+        /// </summary>
+        /// <param name="mat"></param>
+        /// <param name="workNumber"></param>
+        public void CreateBuilder(Matrix4 mat, int workNumber)
+        {
 
-            List<Part> works = ElectrodeAssembleCollection.GetWorkCollection(asmPart);
-            foreach (Part part in works)
-            {
-                WorkAssembleModel mold = new WorkAssembleModel();
-                mold.GetPart(part);
-                number.Add(mold.WorkNumber);
-            }
-            return number;
+            WorkModel work = new WorkModel(this.Model.Asm.WorkpieceDirectoryPath, this.Model.Asm.MoldInfo, workNumber, mat);
+            work.CreatePart();
+            work.Load(asmPart);
+            singleton.AddWork(work);
         }
-        /// <summary>
-        /// 添加work
-        /// </summary>
-        /// <param name="matr"></param>
-        /// <param name="number"></param>
-        /// <param name="asmPart"></param>
-        public static void CreateWork(Matrix4 matr, int number, Part asmPart)
-        {
-            AsmAssembleModel asmMold = new AsmAssembleModel();
-            EDMAssembleModel edmMold = new EDMAssembleModel();
-            asmMold.GetPart(asmPart);
-            edmMold.GetPart(ElectrodeAssembleCollection.GetEDMCollection(asmPart));
-            WorkAssembleModel work = new WorkAssembleModel(asmMold.MoldInfo, number, matr);
-            work.CreatePart(asmMold.WorkpieceDirectoryPath);
-            PartUtils.SetPartDisplay(asmPart);
-            NXOpen.Assemblies.Component comp = work.Load(asmPart);
-            edmMold.Load(work.PartTag);
-            PartUtils.SetPartWork(comp);
-        }
+
         /// <summary>
         /// 修改矩阵
         /// </summary>
-        /// <param name="matr"></param>
-        /// <param name="number"></param>
-        /// <param name="asmPart"></param>
-        public static void AlterMatr(Matrix4 matr, int number, Part asmPart)
+        /// <param name="mat"></param>
+        /// <param name="workNumber"></param>
+        /// <returns></returns>
+        public bool AlterMatr(Matrix4 mat, int workNumber)
         {
-            Tag csysTag = Tag.Null;
-            UFSession theUFSession = UFSession.GetUFSession();
-            AsmAssembleModel asmMold = new AsmAssembleModel();
-            WorkAssembleModel work = new WorkAssembleModel();
-            asmMold.GetPart(asmPart);
-            List<Part> works = ElectrodeAssembleCollection.GetWorkCollection(asmPart);
-            string workName = asmMold.MoldInfo.MoldNumber + "-" + asmMold.MoldInfo.WorkpieceNumber + "-WORK" + number.ToString();
-            foreach (Part part in works)
+            WorkModel work = this.Model.Works.Find(x => x.WorkNumber == workNumber);
+            if (work != null)
             {
-                if (part.Name.Equals(workName))
-                {
-                    work.GetPart(part);
-                    break;
-                }
+                NXOpen.Assemblies.Component workComp = work.PartTag.OwningComponent.Parent;
+                PartUtils.SetPartWork(workComp);
+                work.AlterMatr(mat);
+                CartesianCoordinateSystem csys = work.PartTag.WCS.Save();
+                csys.Name = "WORK" + workNumber.ToString();
+                csys.Color = 186;
+                csys.Layer = 200;
+                return true;
             }
-            work.AlterMatr(matr);
-            PartUtils.SetPartDisplay(work.PartTag);
-            theUFSession.Obj.CycleByName("WORK" + number.ToString(), ref csysTag);
-            theUFSession.Obj.DeleteObject(csysTag);
+            return false;
+
+        }
+        /// <summary>
+        /// 获取最大电极
+        /// </summary>
+        /// <returns></returns>
+        public int GetMaxWorkNumber()
+        {
+            this.Model.Electrodes.Sort();
+            return this.Model.Electrodes[this.Model.Electrodes.Count - 1].EleInfo.EleNumber;
         }
 
     }

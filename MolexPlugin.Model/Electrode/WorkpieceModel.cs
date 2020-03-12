@@ -8,27 +8,28 @@ using NXOpen;
 using Basic;
 using NXOpen.Assemblies;
 
-namespace MolexPlugin.Model.Electrode
+namespace MolexPlugin.Model
 {
     /// <summary>
     /// 工件
     /// </summary>
     public class WorkpieceModel : AbstractModel
     {
-        public WorkpieceModel(Part part,MoldInfoModel moldInfo)
+        private string filePath;
+        public WorkpieceModel(string filePath, Part part, MoldInfoModel moldInfo)
         {
             this.PartTag = part;
             this.MoldInfo = moldInfo;
             this.WorkpiecePath = part.FullPath;
-            this.WorkpieceDirectoryPath = Path.GetDirectoryName(WorkpiecePath) + "\\";         
+            this.WorkpieceDirectoryPath = Path.GetDirectoryName(WorkpiecePath) + "\\";
             this.PartType = "Workpiece";
-           
+            this.filePath = filePath;
             this.GetAssembleName();
         }
-        public override bool CreatePart(string filePath)
+        public override void CreatePart()
         {
             if (this.PartTag.Name.Equals(this.AssembleName))
-                return false;
+                return;
             string oldPth = this.WorkpiecePath;
             this.WorkpieceDirectoryPath = filePath;
             if (!Directory.Exists(this.WorkpieceDirectoryPath))
@@ -37,12 +38,12 @@ namespace MolexPlugin.Model.Electrode
             }
             this.SetAttribute();
             this.WorkpiecePath = this.WorkpieceDirectoryPath + this.AssembleName + ".prt";
-            if(File.Exists(this.WorkpiecePath))
+            if (File.Exists(this.WorkpiecePath))
             {
                 File.Delete(this.WorkpiecePath);
             }
             File.Move(oldPth, this.WorkpiecePath);
-            return true;
+
         }
 
         public override void GetAssembleName()

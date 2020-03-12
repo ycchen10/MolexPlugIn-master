@@ -3,22 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NXOpen;
 
 namespace MolexPlugin.DAL
 {
-    /// <summary>
-    /// 备料
-    /// </summary>
     public class EletrodePreparation
     {
         private List<int> length = new List<int>();
         private List<int> width = new List<int>();
 
-        public EletrodePreparation()
+        public EletrodePreparation(string lengthName, string widthName)
         {
-            this.length = GetContr("CuLength");
-            this.width = GetContr("CuWidth");
+            this.length = GetContr(lengthName);
+            this.width = GetContr(widthName);
             length.Sort();
             width.Sort();
         }
@@ -67,7 +63,11 @@ namespace MolexPlugin.DAL
             return false;
         }
 
-
+        /// <summary>
+        /// 数据库拿数据
+        /// </summary>
+        /// <param name="controlType"></param>
+        /// <returns></returns>
         private List<int> GetContr(string controlType)
         {
             List<int> control = new List<int>();

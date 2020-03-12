@@ -8,7 +8,7 @@ using NXOpen;
 using Basic;
 using NXOpen.Assemblies;
 
-namespace MolexPlugin.Model.Electrode
+namespace MolexPlugin.Model
 {
     /// <summary>
     /// EDM
@@ -19,16 +19,17 @@ namespace MolexPlugin.Model.Electrode
         {
 
         }
-        public ASMModel(MoldInfoModel moldInfo)
+        public ASMModel(string filePath, MoldInfoModel moldInfo)
         {
             this.MoldInfo = moldInfo;
             this.PartType = "ASM";
-        }
-        public override bool CreatePart(string filePath)
-        {
             GetAssembleName();
             this.WorkpieceDirectoryPath = filePath;
             this.WorkpiecePath = filePath + this.AssembleName + ".prt";
+        }
+        public override void CreatePart()
+        {
+
             if (File.Exists(this.WorkpiecePath))
             {
                 File.Delete(this.WorkpiecePath);
@@ -36,7 +37,7 @@ namespace MolexPlugin.Model.Electrode
             Part part = PartUtils.NewFile(this.WorkpiecePath) as Part;
             this.PartTag = part;
             SetAttribute();
-            return true;
+
         }
 
         public override void GetAssembleName()
